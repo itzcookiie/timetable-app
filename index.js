@@ -106,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!inSession) return;
         const now = Date.now();
         const lesson = slot.element.parentElement.querySelector('input[name="lesson"]').value;
-        console.log(lesson)
         const { time } = slot;
         slot.order === 0 ? displayInfo("", now, time) : displayInfo(lesson, now, time);
         countdown(time);

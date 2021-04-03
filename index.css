@@ -39,3 +39,49 @@ body {
 .container {
     
 }
+
+.upper-marker {
+    border-top: 3px dashed darkgrey;
+}
+
+.lower-marker {
+    border-bottom: 3px dashed darkgrey;
+}
+
+.slot {
+    position: relative;
+    margin: 10px 0;
+    padding: 10px 0;
+}
+
+.cross-container {
+    position: absolute;
+    top: 50%;
+    right: -100px;
+    height: 5px;
+    width: 20px;
+}
+
+.cross-container:before, .cross-container:after {
+    content: '';
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: black;
+    transform: rotate(45deg);
+}
+
+.cross-container::after {
+    transform: rotate(-45deg);
+}
+
+.cross-container:hover:before, .cross-container:hover:after{
+    background-color: darkgrey;
+    cursor: pointer;
+}
+
+.drop-zone {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+}

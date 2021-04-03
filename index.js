@@ -18,52 +18,106 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleAddBtn(e) {
         const div = document.createElement('div');
+        const slots = document.querySelectorAll('.slot');
+        const id = slots.length;
+        if(id) {
+            slots.forEach((slot,index) => slot.id = index)
+        }
         div.classList.add('slot');
+        div.id = id;
+        div.setAttribute('draggable', true);
         div.innerHTML =
             `
-            <input type="datetime-local" name="startTime" class="startTime"/>
-            <input type="datetime-local" name="finishTime" class="finishTime"/>
+            <div>            
+                <label>Lesson:</label>
+                <input type="text" name="lesson" />
+                <input type="datetime-local" name="startTime" class="datetime"/>
+                <input type="datetime-local" name="finishTime" class="datetime"/>
+            </div>
+            <div class="cross-container"></div>
             `;
+
+        div.addEventListener('dragstart', handleOnDragStart);
+        div.addEventListener('dragover', handleOnDragOver);
+        div.addEventListener('dragleave', handleDragLeave);
+        div.addEventListener('drop', handleOnDrop);
+
+        const crossContainer = div.querySelector('.cross-container');
+        crossContainer.addEventListener('click', (e) => document.getElementById(id).remove());
+
         form.appendChild(div);
+    }
+
+    function handleOnDragStart(e) {
+        e.dataTransfer.setData("text/plain", e.target.id);
+    }
+
+    function handleDragLeave(e) {
+        e.target.classList.remove('upper-marker', 'lower-marker');
+    }
+
+    function handleOnDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if(e.target.className === 'slot') {
+            const { top, bottom } = e.target.getBoundingClientRect();
+            const midPoint = (bottom + top) / 2;
+            const { classList } = e.target;
+            const { clientY } = e;
+            if(clientY > midPoint) {
+                classList.add('lower-marker')
+                classList.remove('upper-marker');
+            } else {
+                classList.remove('lower-marker')
+                classList.add('upper-marker');
+            }
+        }
+    }
+
+    function handleOnDrop(e) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text/plain");
+        const node = document.getElementById(id);
+        const target = e.target;
+        target.classList.remove('upper-marker', 'lower-marker');
+        form.insertBefore(node, target);
     }
 
     function handleSubmitBtn(e) {
         inSession = true;
         const nearestSlot = findNearestSlot();
-        runCountdown(nearestSlot, true);
+        runCountdown(nearestSlot);
     }
 
     function findNearestSlot() {
-        storedSlots = document.querySelectorAll('.slot');
-        const slotTimes = [...storedSlots].map(getSlotTimes);
-        const formattedSlotTimes = formatSlotTimes(slotTimes);
-        const sortedSlotTimes = formattedSlotTimes.sort((a,b) => a.timeDiff - b.timeDiff);
-        const validSlotTimes = sortedSlotTimes.filter(slot => slot.timeDiff > 0)
+        const slots = document.querySelectorAll('.datetime');
+        const slotTimes = [...slots].map(getSlotTime);
+        // const formattedSlotTimes = formatSlotTimes(slotTimes);
+        // const sortedSlotTimes = slotTimes.sort((a,b) => a.timeDiff - b.timeDiff);
+        const validSlotTimes = slotTimes.filter(slot => slot.timeDiff > 0);
         return validSlotTimes[0];
     }
 
-    function runCountdown(slot, firstRound) {
+    function runCountdown(slot) {
         if(!inSession) return;
         const now = Date.now();
-        if(firstRound) {
-            displayInfo('', now, slot.time);
-        } else {
-            displayInfo('', now, slot.time);
-        }
-        countdown(slot.time);
+        const lesson = slot.element.parentElement.querySelector('input[name="lesson"]').value;
+        const { time } = slot;
+        slot.order === 0 ? displayInfo("", now, time) : displayInfo(lesson, now, time);
+        countdown(time);
         interval = setInterval(() => {
             if(!inSession) {
                 reset();
                 return;
             }
             timetableScreen.classList.add('show');
-            const slotFinished = countdown(slot.time)
+            const slotFinished = countdown(time)
             if(slotFinished) {
                 const audio = new Audio("./sounds/annoying_sound.mp3");
                 audio.play();
                 clearInterval(interval);
                 const nextSlot = findNearestSlot();
-                runCountdown(nextSlot, false)
+                runCountdown(nextSlot);
             }
         }, 1000)
     }
@@ -72,30 +126,23 @@ document.addEventListener('DOMContentLoaded', () => {
         timetableInfo.innerHTML =
             `
                 <p>Lesson: ${lesson}</p>
-                <p>Start time: ${new Date(startTime).toLocaleTimeString()}</p>
-                <p>End time: ${new Date(endTime).toLocaleTimeString()}</p>
+                <p>Start time: ${formatTime(startTime)}</p>
+                <p>End time: ${formatTime(endTime)}</p>
             `
     }
 
-    function getSlotTimes(slot) {
-        const startTimeInput = slot.querySelector('input[name="startTime"]');
-        startTimeInput.startTime = true;
-        const finishTimeInput = slot.querySelector('input[name="finishTime"]');
-        finishTimeInput.startTime = false;
-        const startTime = startTimeInput.value;
-        const endTime = finishTimeInput.value;
-        return [
-            {
-                time: startTime,
-                timeDiff: new Date(startTime).getTime() - Date.now(),
-                element: startTimeInput
-            },
-            {
-                time: endTime,
-                timeDiff: new Date(endTime).getTime() - Date.now(),
-                element: finishTimeInput
-            }
-        ]
+    function formatTime(time) {
+        return new Date(time).toLocaleTimeString('en-us', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getSlotTime(slot, order) {
+        const time = slot.value;
+        return {
+            order,
+            time,
+            timeDiff: new Date(time).getTime() - Date.now(),
+            element: slot
+        }
     }
 
     function formatSlotTimes(slots) {
@@ -114,17 +161,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 })
-
-
-
-// TODO
-// Check pickSlot function works when time matches ✔
-// Calculate time from startTime to finishTime ✔
-// Finish pickSlot functionality - should find the closest activity that is about to start then start timer (timetable app) when it reaches the startTime ✔
-// When the time ends for an activity, an incredibly annoying alarm should ring ✔
-// When an activity is in session, make the background go blue or whatever RNG colour ✔
-// Screen should only display info about activity, start time, end time and maybe the next activity ✔
-// If you click on the screen anywhere the timetable finishes ✔
-// You can click the submit button again and it will start up like you never left ✔
-
-// Fill in lesson - add label to HTML so we can add lessons

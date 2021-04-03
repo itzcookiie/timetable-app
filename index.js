@@ -127,10 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayInfo(lesson, startTime, endTime) {
-        timetableLessonContainer.classList.add('timetable-lesson');
         timetableLessonContainer.innerHTML =
             `
-                <p>Lesson: ${lesson}</p>
+                <p class="timetable-lesson">Lesson: ${lesson}</p>
             `
 
         timetableInfoContainer.innerHTML =

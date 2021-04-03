@@ -41,6 +41,10 @@ body {
     text-align: center;
 }
 
+.timetable-lesson {
+    text-decoration: underline;
+}
+
 .timetable-info-container {
     display: flex;
     justify-content: space-evenly;

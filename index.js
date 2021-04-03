@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addBtn = document.getElementById('add'),
         submitBtn = document.getElementById('submit'),
         form = document.querySelector('form'),
+        container = document.querySelector('.container'),
         timetableLessonContainer = document.querySelector('.timetable-lesson-container'),
         timetableInfoContainer = document.querySelector('.timetable-info-container'),
         timetableScreen = document.querySelector('.timetable-screen');
@@ -99,21 +100,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const slots = document.querySelectorAll('.datetime');
         const slotTimes = [...slots].map(getSlotTime);
         const validSlotTimes = slotTimes.filter(slot => slot.timeDiff > 0);
-        return validSlotTimes[0];
+        return validSlotTimes[0] || false;
     }
 
     function runCountdown(slot) {
-        if(!inSession) return;
+        if (shouldEndTimetable(slot)) return;
+        if(slot === 0) {
+            reset();
+            return;
+        }
         const now = Date.now();
         const lesson = slot.element.parentElement.querySelector('input[name="lesson"]').value;
         const { time } = slot;
         slot.order === 0 ? displayInfo("", now, time) : displayInfo(lesson, now, time);
         countdown(time);
         interval = setInterval(() => {
-            if(!inSession) {
-                reset();
-                return;
-            }
+            if (shouldEndTimetable(slot)) return;
             timetableScreen.classList.add('show');
             const slotFinished = countdown(time);
             if(slotFinished) {
@@ -124,6 +126,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 runCountdown(nextSlot);
             }
         }, 1000)
+    }
+
+    function shouldEndTimetable(slot) {
+        if(!inSession) {
+            reset();
+            return true;
+        }
+        if(slot === false) {
+            const h2 = document.getElementById('container-message');
+            h2.innerText = 'Timetable has ended!'
+            return true;
+        }
     }
 
     function displayInfo(lesson, startTime, endTime) {

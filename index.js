@@ -5,11 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const addBtn = document.getElementById('add'),
         submitBtn = document.getElementById('submit'),
         form = document.querySelector('form'),
-        timetableInfo = document.querySelector('.timetable-info'),
-        timetableScreen = document.querySelector('.timetable-screen'),
-        container = document.querySelector('.container');
+        timetableLessonContainer = document.querySelector('.timetable-lesson-container'),
+        timetableInfoContainer = document.querySelector('.timetable-info-container'),
+        timetableScreen = document.querySelector('.timetable-screen');
 
-    let storedSlots = [];
     let inSession = false;
     let interval;
 
@@ -77,10 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleOnDrop(e) {
         e.preventDefault();
         const id = e.dataTransfer.getData("text/plain");
-        const node = document.getElementById(id);
-        const target = e.target;
+        const sourceNode = document.getElementById(id);
+        const { target, clientY } = e;
         target.classList.remove('upper-marker', 'lower-marker');
-        form.insertBefore(node, target);
+        const { top, bottom } = target.getBoundingClientRect();
+        const midPoint = (bottom + top) / 2;
+        if(clientY > midPoint) {
+            target.insertAdjacentElement('afterend', sourceNode);
+        } else {
+            form.insertBefore(sourceNode, target);
+        }
+
     }
 
     function handleSubmitBtn(e) {
@@ -92,8 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function findNearestSlot() {
         const slots = document.querySelectorAll('.datetime');
         const slotTimes = [...slots].map(getSlotTime);
-        // const formattedSlotTimes = formatSlotTimes(slotTimes);
-        // const sortedSlotTimes = slotTimes.sort((a,b) => a.timeDiff - b.timeDiff);
         const validSlotTimes = slotTimes.filter(slot => slot.timeDiff > 0);
         return validSlotTimes[0];
     }
@@ -102,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!inSession) return;
         const now = Date.now();
         const lesson = slot.element.parentElement.querySelector('input[name="lesson"]').value;
+        console.log(lesson)
         const { time } = slot;
         slot.order === 0 ? displayInfo("", now, time) : displayInfo(lesson, now, time);
         countdown(time);
@@ -111,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             timetableScreen.classList.add('show');
-            const slotFinished = countdown(time)
+            const slotFinished = countdown(time);
             if(slotFinished) {
                 const audio = new Audio("./sounds/annoying_sound.mp3");
                 audio.play();
@@ -123,11 +128,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayInfo(lesson, startTime, endTime) {
-        timetableInfo.innerHTML =
+        timetableLessonContainer.classList.add('timetable-lesson');
+        timetableLessonContainer.innerHTML =
             `
                 <p>Lesson: ${lesson}</p>
-                <p>Start time: ${formatTime(startTime)}</p>
-                <p>End time: ${formatTime(endTime)}</p>
+            `
+
+        timetableInfoContainer.innerHTML =
+            `
+                <p class="timetable-start-time">Start time: ${formatTime(startTime)}</p>
+                <p class="timetable-end-time">End time: ${formatTime(endTime)}</p>
+                
             `
     }
 
@@ -143,10 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
             timeDiff: new Date(time).getTime() - Date.now(),
             element: slot
         }
-    }
-
-    function formatSlotTimes(slots) {
-        return slots.flatMap(slot => slot)
     }
 
     function reset() {

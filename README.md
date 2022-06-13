@@ -17,3 +17,16 @@
 Completed. All that's left is to finish off CSS
 
 - Added drag and drop so I can arrange it in any order I want
+
+
+### Ideas
+
+#### How the app should work (so I know what parts need to be refactored)
+- Create a list of activities with the name and start + finish time
+- Once I've created the list, I want to lock them in and be told what my current activity is, what time I started + will finish and how long is left
+- If I want to cancel the timetable in progress, I can press esc
+
+
+#### Features
+- Have to fill in all the activity fields (all fields are required)
+- Start time of additional activities will be autofilled in based on prev activity finish time
